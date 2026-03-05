@@ -119,8 +119,6 @@ GET /api/user/profile
 Authorization: Bearer eyJhbGciOiJI...
 
 
-/* ------------------------------------------------------------------------------------------------ */
-
 -- Após o processo de autorização, o Authorization Server irá emitir um token contendo esses escopos:
 {
   "access_token": "ey...",
@@ -150,3 +148,16 @@ Exemplos:
 `billing.invoices.manage`
 `inventory.products.read`
 `analytics.reports.generate`
+
+
+/* ------------------------------------------------------------------------------------------------ */
+
+-- Exemplo de payload de um token JWT:
+{
+  "sub": "user123",
+  "scope": "read:orders write:orders",
+  "iss": "https://auth.example.com/",
+  "aud": "https://api.example.com/",
+  "exp": 1711923600,
+  "iat": 1711920000
+}
