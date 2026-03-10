@@ -161,3 +161,12 @@ Exemplos:
   "exp": 1711923600,
   "iat": 1711920000
 }
+
+
+/* ------------------------------------------------------------------------------------------------ */
+
+Um Bearer Token é um tipo de credencial emitida por um Authorization Server no contexto do OAuth2. O nome "bearer" (portador) indica que qualquer entidade que possua o token tem o direito de usá-lo, sem a necessidade de outras provas adicionais. Assim, o nível de segurança depende fortemente de:
+- Proteção durante o transporte (HTTPS obrigatório).
+- Armazenamento seguro no cliente.
+- Validação rigorosa no servidor.
+Bearer Tokens podem ser opacos ou estruturados (como JWT), mas o método de envio pelo HTTP segue o mesmo padrão.
