@@ -287,6 +287,29 @@ Essa abordagem é a utilizada por plataformas como Auth0, Keycloak, Azure AD, Go
 
 /* ------------------------------------------------------------------------------------------------ */
 
+-- Revogando um Refresh Token (via cURL):
+
+curl -X POST https://auth.server.com/revoke \
+  -u client123:secret \
+  -d token=xyz.refresh.token \
+  -d token_type_hint=refresh_token
+
+-- Revogando Múltiplos Tokens (Fluxo de Logout):
+
+async function revokeToken(token) {
+  const params = new URLSearchParams();
+  params.append('token', token);
+
+  await axios.post(
+    'https://auth.server.com/revoke',
+    params,
+    {
+      auth: { username: 'client123', password: 'secret' }
+    }
+  );
+}
+Aplicações robustas revogam todos os tokens ativos associados ao usuário durante o logout.
+
 /* ------------------------------------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------------------------------------ */
