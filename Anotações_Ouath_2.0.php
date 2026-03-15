@@ -310,6 +310,29 @@ async function revokeToken(token) {
 }
 Aplicações robustas revogam todos os tokens ativos associados ao usuário durante o logout.
 
+
 /* ------------------------------------------------------------------------------------------------ */
 
+-- Uso de AWS Secrets Manager em uma aplicação Node.js
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+
+const client = new SecretsManagerClient({ region: "us-east-1" });
+
+async function loadCredentials() {
+  const command = new GetSecretValueCommand({ SecretId: "client-app/credentials" });
+  const response = await client.send(command);
+  const secrets = JSON.parse(response.SecretString);
+  return secrets.client_secret;
+}
+
+loadCredentials().then(secret => {
+  console.log("Client secret carregado com segurança.");
+});
+
+
+/* ------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------ */
