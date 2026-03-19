@@ -1,4 +1,5 @@
 <?php
+header("Content-Type: application/json");
 
 // Solicitar token
 echo "Digite o Access Token: ";
@@ -42,3 +43,4 @@ echo $headers;
 
 echo "\n===== BODY =====\n";
 echo $body;
+?>
