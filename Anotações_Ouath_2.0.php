@@ -331,8 +331,101 @@ loadCredentials().then(secret => {
 
 
 /* ------------------------------------------------------------------------------------------------ */
+
+-- Troca do Código por Tokens
+A aplicação (backend) envia uma requisição ao Authorization Server para trocar o código por tokens. Essa etapa não envolve o navegador.
+
+A requisição deve conter:
+grant_type=authorization_code
+code: o código recebido.
+redirect_uri: deve ser idêntica à da etapa inicial.
+client_id e client_secret (em aplicações confidenciais).
+code_verifier (quando PKCE está sendo usado).
+
+Exemplo:
+POST /oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&
+code=abc123&
+redirect_uri=https://app.example.com/callback&
+client_id=cliente123&
+client_secret=S3cr3t&
+code_verifier=klasjdf8923...
+O Authorization Server retorna:
+
+{
+  "access_token": "eyJhbGciOi...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "8sddf98as7df...",
+  "scope": "read write"
+}
+
+Esse é o ponto central de segurança: o token nunca transita pelo navegador, apenas o código temporário.
+
+
 /* ------------------------------------------------------------------------------------------------ */
+
+-- Exemplo Completo de Fluxo
+A sequência resumida:
+
+1. Usuário acessa a aplicação.
+2. Sistema redireciona para Authorization Server.
+3. Usuário autentica e concede acesso.
+4. Authorization Server redireciona com code.
+5. Backend troca o code por tokens.
+6. Backend usa o token para acessar APIs.
+
+Esse ciclo descreve o funcionamento padrão adotado por plataformas como Google, Microsoft, GitHub e provedores OpenID Connect.
+
+
 /* ------------------------------------------------------------------------------------------------ */
+
+-- PKCE
+
+O Authorization Code Flow é um dos mecanismos mais utilizados no OAuth2 para permitir que aplicações obtenham tokens de acesso com segurança. Porém, quando aplicado em ambientes públicos ou inseguros — como Single Page Applications (SPAs), aplicativos mobile ou qualquer ambiente em que o client secret não possa ser armazenado com segurança — surge um risco crítico: a possibilidade de interceptação do authorization code por agentes mal‑intencionados.
+
+Para mitigar esse risco, o OAuth 2.1 e as melhores práticas modernas recomendam o uso obrigatório de uma extensão chamada PKCE (Proof Key for Code Exchange). Originalmente projetada para aplicações mobile, PKCE tornou‑se um padrão de segurança amplamente adotado em todos os cenários onde o sigilo do client secret não é garantido.
+
+Antes de entender o PKCE, é essencial compreender o risco que ele resolve. No fluxo Authorization Code tradicional, o cliente:
+Redireciona o usuário ao servidor de autorização.
+Recebe um authorization code de volta por meio de redirecionamento.
+Troca esse code por tokens de acesso.
+O risco aparece entre o momento em que o servidor de autorização envia o authorization code e o momento em que o cliente o utiliza. Esse intervalo pode ser explorado para um ataque conhecido como Authorization Code Interception Attack.
+
+O ataque ocorre quando:
+Um invasor consegue interceptar o redirecionamento contendo o authorization code.
+Ele utiliza esse code para solicitar tokens diretamente ao servidor de autorização.
+Como o fluxo tradicional não exige uma prova adicional de posse, o invasor pode obter tokens válidos.
+
+Essa falha se torna particularmente grave em:
+Aplicativos mobile (onde apps maliciosos podem capturar callbacks personalizados).
+SPAs (onde scripts maliciosos podem interceptar dados na URL).
+Ambientes com proxies inseguros.
+Para evitar isso, é necessário um mecanismo que garanta que somente o cliente legítimo, que iniciou o fluxo, possa completar a troca pelo token. É aqui que entra o PKCE.
+
+-- PKCE significa Proof Key for Code Exchange (Prova de Chave para Troca de Código). É uma extensão do OAuth2 que substitui a necessidade de um client secret e implementa um mecanismo de prova criptográfica entre as etapas do fluxo Authorization Code.
+
+Com PKCE, o cliente cria um token temporário chamado code verifier, do qual deriva outro valor, o code challenge, que será enviado ao servidor de autorização.
+
+Quando o cliente tenta trocar o authorization code por tokens, ele deve apresentar o code verifier original. O servidor então verifica se:
+O code verifier corresponde ao code challenge enviado anteriormente.
+Se corresponder, a troca do authorization code é permitida; caso contrário, ela é bloqueada.
+
+Essa prova garante que, mesmo que o authorization code seja interceptado, ele é inútil para o atacante, pois ele não possui o code verifier.
+
+
 /* ------------------------------------------------------------------------------------------------ */
+
+-- PKCE em Mobile (iOS e Android)
+Aplicativos mobile são particularmente vulneráveis a interceptação de callbacks.
+
+Exemplos de ataques reais:
+Outro app registrado com o mesmo esquema de URI intercepta o retorno.
+WebView manipulada captura a URL.
+PKCE garante que mesmo que o retorno seja capturado, a troca do código será impossível.
+
+
 /* ------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------ */
